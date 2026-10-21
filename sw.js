@@ -1,10 +1,10 @@
 /* 我的衣柜 Service Worker：缓存应用外壳，支持离线使用 */
-const CACHE = 'wardrobe-v11';
+const CACHE = 'wardrobe-v12';
 const SHELL = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
+  './style.css?v=11',
+  './app.js?v=11',
   './manifest.webmanifest',
   './icon.png',
   './icon-192.png',
