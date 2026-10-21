@@ -517,6 +517,7 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 /* ---------- 响应式 ---------- */
 @media(max-width:900px){
   .outfit-layout{grid-template-columns:1fr;height:auto;flex:none}
+  .outfit-layout .canvas-stage{height:clamp(340px,100vw - 48px,560px);flex:none}
   .palette{max-height:210px}
   .palette-list{grid-template-columns:repeat(4,1fr)}
   .modal-body{grid-template-columns:1fr}
