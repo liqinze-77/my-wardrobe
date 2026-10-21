@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+<title>我的衣柜</title>
+<meta name="description" content="本地优先的私人衣柜管理与穿搭搭配工具">
+<meta name="theme-color" content="#faf7f4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="我的衣柜">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👚</text></svg>">
+<link rel="apple-touch-icon" href="icon.png">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">👚</span>
+    <h1>我的衣柜</h1>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" data-view="wardrobe">衣柜</button>
+    <button class="tab" data-view="outfits">搭配</button>
+  </nav>
+  <div class="topbar-actions">
+    <button class="icon-btn" id="btnBackup" title="备份/恢复数据">⚙️</button>
+    <button class="btn-primary" id="btnAdd">+ 添加衣物</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ 衣柜页 ============ -->
+  <section id="view-wardrobe" class="view active">
+    <div class="stats" id="stats"></div>
+
+    <div class="filters">
+      <div class="filter-row">
+        <input type="search" id="searchInput" class="search" placeholder="🔍 搜索衣物名称或备注…">
+        <select id="sortSelect" class="select">
+          <option value="new">最近添加</option>
+          <option value="old">最早添加</option>
+          <option value="name">按名称</option>
+          <option value="wear">按穿着次数</option>
+        </select>
+      </div>
+      <div class="filter-group" id="filterGroup"></div>
+      <div class="filter-active" id="filterActive"></div>
+    </div>
+
+    <div class="grid" id="garmentGrid"></div>
+    <div class="empty" id="garmentEmpty" hidden>
+      <div class="empty-emoji">🪄</div>
+      <p>衣柜还是空的</p>
+      <p class="empty-sub">点击右上角「添加衣物」，把你的衣服一件件挂进来吧</p>
+      <button class="btn-primary" id="btnAddEmpty">+ 添加第一件衣物</button>
+    </div>
+  </section>
+
+  <!-- ============ 搭配页 ============ -->
+  <section id="view-outfits" class="view">
+    <div class="outfit-layout">
+      <!-- 左侧：衣物选择 -->
+      <aside class="palette" id="palette">
+        <div class="palette-head">
+          <h3>衣物篮</h3>
+          <input type="search" id="paletteSearch" class="search small" placeholder="搜索…">
+        </div>
+        <div class="palette-filter" id="paletteFilter"></div>
+        <div class="palette-list" id="paletteList"></div>
+        <input type="file" id="meInput" accept="image/*" multiple hidden>
+      </aside>
+
+      <!-- 中间：画布 -->
+      <div class="canvas-wrap">
+        <div class="canvas-toolbar">
+          <div class="tool-group">
+            <span class="tool-label">背景</span>
+            <button class="swatch" data-bg="#ffffff" style="--c:#ffffff" title="白色"></button>
+            <button class="swatch" data-bg="#f4f1ea" style="--c:#f4f1ea" title="米色"></button>
+            <button class="swatch" data-bg="#e8eef3" style="--c:#e8eef3" title="浅蓝"></button>
+            <button class="swatch" data-bg="#f7e8ee" style="--c:#f7e8ee" title="浅粉"></button>
+            <button class="swatch" data-bg="#2b2b31" style="--c:#2b2b31" title="深色"></button>
+          </div>
+          <div class="tool-group">
+            <button class="icon-btn" id="btnLayerDown" title="下移一层">⬇︎</button>
+            <button class="icon-btn" id="btnLayerUp" title="上移一层">⬆︎</button>
+            <button class="icon-btn" id="btnFlip" title="水平翻转">⇋</button>
+            <button class="icon-btn danger" id="btnDeleteEl" title="删除所选">🗑</button>
+          </div>
+          <div class="tool-group right">
+            <button class="icon-btn" id="btnClearCanvas" title="清空画布">清空</button>
+            <input id="outfitName" class="input-inline" placeholder="搭配名称">
+            <button class="btn-primary" id="btnSaveOutfit">保存搭配</button>
+          </div>
+        </div>
+        <div class="canvas-stage">
+          <canvas id="stage" width="900" height="900"></canvas>
+          <div class="canvas-hint" id="canvasHint">
+            点击左侧衣物即可加入画布<br>拖动移动 · 滚轮缩放 · 双击删除
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="outfits-saved">
+      <h3>已保存的搭配 <span class="count" id="outfitCount">0</span></h3>
+      <div class="grid outfits" id="outfitGrid"></div>
+      <div class="empty small" id="outfitEmpty" hidden>
+        <div class="empty-emoji">✨</div>
+        <p>还没有搭配</p>
+        <p class="empty-sub">把衣物拖到画布上，试着配一套吧</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ 添加/编辑衣物 弹窗 ============ -->
+<div class="modal" id="modalGarment" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="garmentModalTitle">添加衣物</h2>
+      <button class="close" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="photo-area">
+        <div class="photo-drop" id="photoDrop">
+          <input type="file" id="photoInput" accept="image/*" multiple hidden>
+          <div class="photo-placeholder" id="photoPlaceholder">
+            <div class="photo-icon">📷</div>
+            <p>点击选择照片</p>
+            <p class="hint">支持多选，会自动压缩</p>
+          </div>
+          <img id="photoPreview" alt="" hidden>
+        </div>
+        <div class="photo-thumbs" id="photoThumbs"></div>
+        <div class="photo-actions" id="photoActions" hidden>
+          <button type="button" class="btn-mini" id="btnRmbg">✂️ 一键去背景</button>
+          <button type="button" class="btn-mini ghost" id="btnUndoRmbg" hidden>↺ 恢复原图</button>
+        </div>
+      </div>
+
+      <div class="form-area">
+        <label class="field">
+          <span>名称</span>
+          <input type="text" id="gName" placeholder="如：白色oversize衬衫">
+        </label>
+
+        <div class="field">
+          <span>类型</span>
+          <div class="chips" id="gType"></div>
+        </div>
+
+        <div class="field">
+          <span>主色调 <em>可多选，如白+蓝的条纹衫</em></span>
+          <div class="color-picker">
+            <div class="swatch-grid" id="gColorSwatches"></div>
+            <label class="custom-color">
+              <input type="color" id="gColorCustom" value="#888888">
+              <span>自定义</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span>适合季节 <em>可多选</em></span>
+          <div class="chips" id="gSeason"></div>
+        </div>
+
+        <div class="field">
+          <span>风格 <em>可多选，点「＋自定义」加自己的标签</em></span>
+          <div class="chips" id="gStyle"></div>
+        </div>
+
+        <label class="field">
+          <span>放在哪个衣柜 / 收纳处</span>
+          <input type="text" id="gLocation" list="locationList" placeholder="如：卧室主衣柜 2层">
+          <datalist id="locationList"></datalist>
+        </label>
+
+        <label class="field">
+          <span>备注 <em>可选</em></span>
+          <textarea id="gNote" rows="2" placeholder="尺码、购买时间、搭配心得…"></textarea>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="btnWear" hidden>✓ 今天穿了</button>
+      <button class="btn-ghost danger" id="btnDeleteGarment" hidden>删除</button>
+      <div class="spacer"></div>
+      <button class="btn-ghost" data-close>取消</button>
+      <button class="btn-primary" id="btnSaveGarment">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 搭配详情 弹窗 ============ -->
+<div class="modal" id="modalOutfit" hidden>
+  <div class="modal-box wide">
+    <div class="modal-head">
+      <h2 id="outfitModalTitle">搭配详情</h2>
+      <button class="close" data-close>✕</button>
+    </div>
+    <div class="modal-body center">
+      <img id="outfitImage" class="outfit-image" alt="搭配">
+      <p class="outfit-meta" id="outfitMeta"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost danger" id="btnDeleteOutfit">删除</button>
+      <div class="spacer"></div>
+      <button class="btn-ghost" id="btnDownloadOutfit">下载图片</button>
+      <button class="btn-primary" id="btnEditOutfit">继续编辑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 备份 弹窗 ============ -->
+<div class="modal" id="modalBackup" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>数据备份</h2>
+      <button class="close" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="muted">数据保存在这台设备的浏览器里（IndexedDB）。换设备、清理浏览器缓存都会丢失，建议定期导出备份。</p>
+      <div class="backup-actions">
+        <button class="btn-primary block" id="btnExport">⬇️ 导出备份文件</button>
+        <button class="btn-ghost block" id="btnImport">⬆️ 从备份文件恢复</button>
+        <input type="file" id="importInput" accept=".json,application/json" hidden>
+      </div>
+      <p class="muted small" id="storageInfo"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost danger" id="btnReset">清空全部数据</button>
+      <div class="spacer"></div>
+      <button class="btn-primary" data-close>完成</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW注册失败(不影响使用)', e));
+  });
+}
+</script>
+</body>
+</html>
