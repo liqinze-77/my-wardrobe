@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="我的衣柜">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👚</text></svg>">
 <link rel="apple-touch-icon" href="icon.png">
 </head>
@@ -243,11 +243,22 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW注册失败(不影响使用)', e));
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      // 每次启动检查更新（绕过浏览器 HTTP 缓存）
+      reg.update().catch(() => {});
+      setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000); // 每 30 分钟
+      // 有新版本接管时自动刷新一次
+      let refreshed = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshed) return;
+        refreshed = true;
+        location.reload();
+      });
+    }).catch((e) => console.warn('SW注册失败(不影响使用)', e));
   });
 }
 </script>
