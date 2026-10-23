@@ -6,7 +6,7 @@ const TARGET = 'https://studio-qz77qz-my-wardrobe.api-inference.modelscope.net';
 export default async function onRequest(context) {
   const req = context.request;
   const url = new URL(req.url);
-  const path = url.pathname.replace(/^\/api/, ''); // /api/health -> /health
+  const path = url.pathname; // 保留完整路径：网关要求 /api/health 这种形式
   const method = req.method;
 
   let body;
