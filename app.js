@@ -196,20 +196,32 @@ function blobUrl(blob) {
 }
 
 /* ---------- 一键抠图（调用本地服务端模型） ---------- */
-/* 静态托管（如 GitHub Pages）没有后端，启动时探测 /api/health 优雅降级 */
+/* 静态托管（如 GitHub Pages）没有后端：先探测同源，再回退远程抠图服务 */
 let _rmbgAvailable = null; // null=探测中 true=可用 false=不可用
+let _rmbgBase = '';        // 抠图 API 基地址（空=同源）
+const REMOTE_RMBG_BASE = ''; // EdgeOne 部署后的地址（如 https://my-wardrobe.xxx），供 GitHub Pages 镜像回退；EdgeOne 主入口无需填写
+const REMOTE_RMBG_TOKEN = ''; // 魔搭访问令牌（modelscope.cn/my/myaccesstoken 获取，ms- 开头）；留空则不鉴权
+function rmbgUrl(path) {
+  let url = _rmbgBase + path;
+  if (_rmbgBase && REMOTE_RMBG_TOKEN) url += (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(REMOTE_RMBG_TOKEN);
+  return url;
+}
 const canRmbg = () => location.protocol !== 'file:' && navigator.onLine !== false && _rmbgAvailable !== false;
 
 async function probeRmbg() {
-  try {
-    const res = await fetch('/api/health', { signal: AbortSignal.timeout(3000) });
-    _rmbgAvailable = res.ok;
-  } catch { _rmbgAvailable = false; }
-  if (!_rmbgAvailable) {
-    // 置灰相关按钮
+  const candidates = ['', REMOTE_RMBG_BASE];
+  for (const base of candidates) {
+    try {
+      _rmbgBase = base;
+      const res = await fetch(rmbgUrl('/api/health'), { signal: AbortSignal.timeout(4000) });
+      if (res.ok) { _rmbgAvailable = true; break; }
+    } catch {}
+  }
+  if (_rmbgAvailable !== true) {
+    _rmbgAvailable = false;
     document.querySelectorAll('#btnRmbg, [data-meop="rmbg"]').forEach((el) => {
       el.disabled = true;
-      el.title = '静态托管版不支持在线抠图，请参照 README 自托管部署';
+      el.title = '抠图服务暂时不可用，请稍后重试或自托管部署';
     });
   }
 }
@@ -221,7 +233,7 @@ function rmbgUnavailableMsg() {
 async function apiRemoveBg(blob) {
   const fd = new FormData();
   fd.append('file', blob, 'photo.webp');
-  const res = await fetch('/api/rmbg', { method: 'POST', body: fd });
+  const res = await fetch(rmbgUrl('/api/rmbg'), { method: 'POST', body: fd });
   if (!res.ok) throw new Error('服务端抠图失败 ' + res.status);
   return await res.blob();
 }
@@ -769,6 +781,18 @@ function onHandle(hit, pos) {
 }
 
 function startDrag(evt) {
+  // 双指捏合缩放：第二根手指落下时切换为 pinch 模式
+  if (evt.touches && evt.touches.length >= 2 && state.selected >= 0) {
+    const t1 = evt.touches[0], t2 = evt.touches[1];
+    state.dragging = {
+      mode: 'pinch',
+      pinchDist0: Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY),
+      elScale: state.elements[state.selected].scale,
+      started: true
+    };
+    evt.preventDefault();
+    return;
+  }
   const pos = stagePos(evt);
   const hit = hitTest(pos);
   if (!hit) {
@@ -793,6 +817,18 @@ function startDrag(evt) {
 function moveDrag(evt) {
   const d = state.dragging;
   if (!d) return;
+  if (d.mode === 'pinch') {
+    if (!evt.touches || evt.touches.length < 2) return;
+    const t1 = evt.touches[0], t2 = evt.touches[1];
+    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    const el = state.elements[state.selected];
+    if (el && d.pinchDist0 > 4) {
+      el.scale = Math.max(0.12, Math.min(4, d.elScale * (dist / d.pinchDist0)));
+      drawCanvas();
+    }
+    evt.preventDefault();
+    return;
+  }
   const pos = stagePos(evt);
   const el = state.elements[state.selected];
   if (!el) return;

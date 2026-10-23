@@ -39,6 +39,15 @@ def _warmup():
 
 app = FastAPI(title="wardrobe-api")
 
+# 允许跨域调用（GitHub Pages 等静态前端可远程使用本抠图服务）
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.on_event("startup")
 def startup():
