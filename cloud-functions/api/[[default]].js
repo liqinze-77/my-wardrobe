@@ -14,10 +14,13 @@ export default async function onRequest(context) {
     body = await req.arrayBuffer();
   }
 
+  const headers = { 'Authorization': 'Bearer ' + (context.env && context.env.MS_TOKEN || '') };
+  const ct = req.headers.get('content-type');
+  if (ct) headers['Content-Type'] = ct; // 必须透传，multipart 表单解析依赖它
   try {
     const resp = await fetch(TARGET + path + url.search, {
       method,
-      headers: { 'Authorization': 'Bearer ' + (context.env && context.env.MS_TOKEN || '') },
+      headers,
       body,
     });
     const headers = new Headers();
