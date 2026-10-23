@@ -23,11 +23,11 @@ export default async function onRequest(context) {
       headers,
       body,
     });
-    const headers = new Headers();
-    const ct = resp.headers.get('content-type');
-    if (ct) headers.set('content-type', ct);
-    headers.set('access-control-allow-origin', '*'); // 供 GitHub Pages 镜像跨域调用
-    return new Response(resp.body, { status: resp.status, headers });
+    const outHeaders = new Headers();
+    const outCt = resp.headers.get('content-type');
+    if (outCt) outHeaders.set('content-type', outCt);
+    outHeaders.set('access-control-allow-origin', '*'); // 供 GitHub Pages 镜像跨域调用
+    return new Response(resp.body, { status: resp.status, headers: outHeaders });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), {
       status: 502,
