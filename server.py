@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL = "isnet-general-use"
+MODEL = "u2net"
 MAX_SIDE = 1400  # 送入模型前限制最长边，保证速度
 
 _session = None
