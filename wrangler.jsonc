@@ -1,0 +1,11 @@
+{
+  // Cloudflare Workers 配置：静态站点 + API 代理
+  "name": "my-wardrobe",
+  "compatibility_date": "2026-10-01",
+  "main": "worker.js",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  }
+}
