@@ -199,7 +199,7 @@ function blobUrl(blob) {
 /* 静态托管（如 GitHub Pages）没有后端：先探测同源，再回退远程抠图服务 */
 let _rmbgAvailable = null; // null=探测中 true=可用 false=不可用
 let _rmbgBase = '';        // 抠图 API 基地址（空=同源）
-const REMOTE_RMBG_BASE = ''; // EdgeOne 部署后的地址（如 https://my-wardrobe.xxx），供 GitHub Pages 镜像回退；EdgeOne 主入口无需填写
+const REMOTE_RMBG_BASE = 'https://wardrobe-proxy-tvtwwnrjek.cn-hangzhou.fcapp.run'; // 阿里云 FC 抠图代理（国内直连）
 const REMOTE_RMBG_TOKEN = ''; // 魔搭访问令牌（modelscope.cn/my/myaccesstoken 获取，ms- 开头）；留空则不鉴权
 function rmbgUrl(path) {
   let url = _rmbgBase + path;
